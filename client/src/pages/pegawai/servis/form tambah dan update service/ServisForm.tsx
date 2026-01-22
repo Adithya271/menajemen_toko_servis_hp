@@ -1,4 +1,4 @@
-import type { ServisData } from "../../types/servis"
+import type { ServisData } from "../types/servis"
 
 type Props = {
   form: ServisData

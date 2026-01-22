@@ -6,7 +6,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard"
 import AdminPegawaiPage from "./pages/admin/pegawai/PegawaiPage"
 
 import PegawaiDashboard from "./pages/pegawai/PegawaiDashboard"
-import PegawaiBarangPage from "./pages/pegawai/barang/BarangPage"
+import PegawaiBarangPage from "./pages/pegawai/barang/pages/BarangPage"
 import PegawaiServisPage from "./pages/pegawai/servis/ServisPage"
 import PegawaiServisDetailPage from "./pages/pegawai/servis/ServisDetailPage"
 import LandingPage from "./pages/main/LandingPage"

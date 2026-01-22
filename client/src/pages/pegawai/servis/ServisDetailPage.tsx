@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import PegawaiLayout from "../../../components/pegawai/PegawaiLayouts"
-import type { Barang, ServisData } from "../types/servis"
+import type { Barang, ServisData } from "./types/servis"
 
 import ServisForm from "./form tambah dan update service/ServisForm"
 import ServisSummary from "./form tambah dan update service/ServisSummary"

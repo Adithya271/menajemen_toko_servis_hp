@@ -14,7 +14,7 @@ import AdminPegawaiPage from "./pages/admin/pegawai/PegawaiPage"
 import LaporanAdminPage from "./pages/admin/laporan/LaporanAdminPage"
 
 import PegawaiDashboard from "./pages/pegawai/PegawaiDashboard"
-import PegawaiBarangPage from "./pages/pegawai/barang/BarangPage"
+import PegawaiBarangPage from "./pages/pegawai/barang/pages/BarangPage"
 import PegawaiServisPage from "./pages/pegawai/servis/ServisPage"
 import PegawaiServisDetailPage from "./pages/pegawai/servis/ServisDetailPage"
 import LaporanPegawaiPage from "./pages/pegawai/laporan/LaporanPegawaiPage"
@@ -118,5 +118,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         />
       </Routes>
     </BrowserRouter>
-  </React.StrictMode>
+  </React.StrictMode>,
 )

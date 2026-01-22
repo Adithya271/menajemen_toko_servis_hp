@@ -1,4 +1,4 @@
-import type { ServisData } from "../../types/servis"
+import type { ServisData } from "../types/servis"
 import { cetakNotaServis } from "./CetakNotaServis"
 import { useNavigate } from "react-router-dom"
 

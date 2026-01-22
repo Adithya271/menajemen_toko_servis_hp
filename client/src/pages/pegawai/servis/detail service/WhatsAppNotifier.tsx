@@ -1,4 +1,4 @@
-import type { ServisData } from "../../types/servis"
+import type { ServisData } from "../types/servis"
 
 type Props = {
   servis: ServisData
@@ -8,7 +8,7 @@ export default function WhatsAppNotifier({ servis }: Props) {
   //  Jangan render jika belum selesai
   if (servis.status_servis !== "selesai") return null
 
-  //  Normalisasi nomor WA 
+  //  Normalisasi nomor WA
   const phone = servis.no_whatsapp.replace(/\s+/g, "").replace(/^0/, "62")
 
   if (!phone) return null
@@ -21,7 +21,7 @@ Servis HP Anda (${servis.tipe_hp}) telah *SELESAI*
 
 Total biaya: Rp ${servis.biaya_total.toLocaleString("id-ID")}
 
-Terima kasih telah menggunakan layanan kami `
+Terima kasih telah menggunakan layanan kami `,
   )
 
   return (

@@ -1,5 +1,5 @@
 // File: utils/cetakNotaServis.ts
-import type { ServisData } from "../../types/servis"
+import type { ServisData } from "../types/servis"
 
 /**
  * Format tanggal ke format Indonesia

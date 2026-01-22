@@ -1,4 +1,4 @@
-import type { Barang, DetailServisItem } from "../../types/servis"
+import type { Barang, DetailServisItem } from "../types/servis"
 import { useEffect, useState } from "react"
 
 type Props = {
@@ -113,7 +113,7 @@ export default function ServisDetailTable({
 
                     if (selectedId !== null) {
                       const barang = barangList.find(
-                        (b) => b.id_barang === selectedId
+                        (b) => b.id_barang === selectedId,
                       )
 
                       if (barang) {

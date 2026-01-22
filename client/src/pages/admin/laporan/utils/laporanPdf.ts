@@ -4,6 +4,7 @@ import autoTable from "jspdf-autotable"
 interface DetailServis {
   nama_pelanggan: string
   tipe_hp: string
+  status_servis: string
   biaya_total: number
   laba_servis: number
 }
@@ -35,6 +36,10 @@ const formatDate = (dateStr: string) =>
     year: "numeric",
   })
 
+const formatStatus = (status: string) => {
+  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 export const generateLaporanPdf = (laporan: LaporanPdf) => {
   const doc = new jsPDF()
 
@@ -48,11 +53,11 @@ export const generateLaporanPdf = (laporan: LaporanPdf) => {
   doc.setFontSize(10)
   doc.text(
     `Periode: ${formatDate(laporan.tanggal_awal)} - ${formatDate(
-      laporan.tanggal_akhir
+      laporan.tanggal_akhir,
     )}`,
     105,
     30,
-    { align: "center" }
+    { align: "center" },
   )
 
   let y = 40
@@ -86,16 +91,20 @@ export const generateLaporanPdf = (laporan: LaporanPdf) => {
   if (laporan.detail_servis && laporan.detail_servis.length > 0) {
     autoTable(doc, {
       startY: y,
-      head: [["No", "Pelanggan", "Tipe HP", "Pendapatan", "Laba"]],
+      head: [["No", "Pelanggan", "Tipe HP", "  Status", "Pendapatan", "Laba"]],
       body: laporan.detail_servis.map((d, i) => [
-        i + 1,
+        (i + 1).toString(),
         d.nama_pelanggan,
         d.tipe_hp,
+        formatStatus(d.status_servis),
         formatCurrency(d.biaya_total),
         formatCurrency(d.laba_servis),
       ]),
       styles: { fontSize: 9 },
       headStyles: { fillColor: [128, 90, 213] },
+      columnStyles: {
+        6: { halign: "center" },
+      },
     })
   }
 
