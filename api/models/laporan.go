@@ -27,6 +27,7 @@ type DetailLaporanServis struct {
 	IDServis       int     `json:"id_servis"`
 	NamaPelanggan  string  `json:"nama_pelanggan"`
 	TipeHP         string  `json:"tipe_hp"`
+	StatusServis   string  `json:"status_servis"`
 	BiayaTotal     float64 `json:"biaya_total"`
 	LabaServis     float64 `json:"laba_servis"`
 }
@@ -39,8 +40,8 @@ type GenerateLaporanRequest struct {
 	Keterangan   string `json:"keterangan"`
 }
 
-// DashboardStats - Stats untuk dashboard
-type DashboardStats struct {
+// Status
+type DataStats struct {
 	HariIni   PeriodStats   `json:"hari_ini"`
 	MingguIni PeriodStats   `json:"minggu_ini"`
 	BulanIni  PeriodStats   `json:"bulan_ini"`

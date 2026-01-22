@@ -141,7 +141,7 @@ export default function ServisDetailTable({
                 </select>
               </td>
 
-              {/* ===== DESKRIPSI (EDITABLE) ===== */}
+              {/* ===== DESKRIPSI (EDIT TABLE) ===== */}
               <td className="border p-2">
                 <input
                   type="text"

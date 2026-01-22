@@ -7,6 +7,7 @@ type Servis struct {
     TipeHP         string          `json:"tipe_hp"`
     Keluhan        string          `json:"keluhan"`
     StatusServis   string          `json:"status_servis"`
+    BiayaServis    float64         `json:"biaya_servis"`
     BiayaTotal     float64         `json:"biaya_total"`
     TanggalMasuk   string          `json:"tanggal_masuk"`
     TanggalSelesai *string         `json:"tanggal_selesai"`

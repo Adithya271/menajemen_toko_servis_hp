@@ -22,6 +22,7 @@ export interface ServisData {
   status_servis: string
   tanggal_masuk: string
   tanggal_selesai: string | null
+  biaya_servis: number
   biaya_total: number
   id_user: number
   detail: DetailServisItem[]

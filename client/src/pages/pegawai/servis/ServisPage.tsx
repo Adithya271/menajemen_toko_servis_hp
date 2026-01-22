@@ -18,8 +18,12 @@ export default function PegawaiServisPage() {
   const [list, setList] = useState<Servis[]>([])
   const [loading, setLoading] = useState(false)
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
   // ============================
-  // FETCH SERVIS (PAKAI TOKEN)
+  // FETCH SERVIS (TOKEN)
   // ============================
   async function fetchServis() {
     setLoading(true)
@@ -44,10 +48,11 @@ export default function PegawaiServisPage() {
       }
 
       setList(data)
+      setCurrentPage(1) // Reset ke halaman 1 saat fetch
     } catch (err) {
       alert(
         "Gagal mengambil data servis: " +
-          (err instanceof Error ? err.message : String(err))
+          (err instanceof Error ? err.message : String(err)),
       )
     } finally {
       setLoading(false)
@@ -83,7 +88,7 @@ export default function PegawaiServisPage() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       )
 
       if (!res.ok) throw new Error("Delete failed")
@@ -133,6 +138,14 @@ export default function PegawaiServisPage() {
   }
 
   // ============================
+  // PAGINATION LOGIC
+  // ============================
+  const totalPages = Math.ceil(list.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentData = list.slice(startIndex, endIndex)
+
+  // ============================
   // RENDER
   // ============================
   return (
@@ -157,6 +170,7 @@ export default function PegawaiServisPage() {
           <table className="min-w-full">
             <thead className="bg-gray-100">
               <tr>
+                <th className="p-3 text-center w-12">No</th>
                 <th className="p-3 text-left">Nama Pelanggan</th>
                 <th className="p-3 text-left">Tipe HP</th>
                 <th className="p-3 text-left">Keluhan</th>
@@ -170,19 +184,22 @@ export default function PegawaiServisPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-4 text-center">
+                  <td colSpan={9} className="p-4 text-center">
                     Loading...
                   </td>
                 </tr>
               ) : list.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-4 text-center text-gray-500">
+                  <td colSpan={9} className="p-4 text-center text-gray-500">
                     Belum ada data servis
                   </td>
                 </tr>
               ) : (
-                list.map((s) => (
+                currentData.map((s, index) => (
                   <tr key={s.id_servis} className="border-t hover:bg-gray-50">
+                    <td className="p-3 text-center text-sm text-gray-600">
+                      {startIndex + index + 1}
+                    </td>
                     <td className="p-3 font-medium">{s.nama_pelanggan}</td>
                     <td className="p-3">{s.tipe_hp}</td>
                     <td className="p-3">
@@ -193,7 +210,7 @@ export default function PegawaiServisPage() {
                     <td className="p-3">
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
-                          s.status_servis
+                          s.status_servis,
                         )}`}
                       >
                         {formatStatus(s.status_servis)}
@@ -235,6 +252,54 @@ export default function PegawaiServisPage() {
             </tbody>
           </table>
         </div>
+
+        {/* ===== PAGINATION ===== */}
+        {list.length > 0 && (
+          <div className="mt-6 flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              Menampilkan {startIndex + 1} - {Math.min(endIndex, list.length)}{" "}
+              dari {list.length} data
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                ← Sebelumnya
+              </button>
+
+              <div className="flex items-center gap-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-2 rounded-lg transition ${
+                        currentPage === page
+                          ? "bg-blue-600 text-white"
+                          : "border border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ),
+                )}
+              </div>
+
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Selanjutnya →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </PegawaiLayout>
   )

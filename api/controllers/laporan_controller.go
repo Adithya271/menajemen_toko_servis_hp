@@ -97,7 +97,7 @@ func GetLaporanDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get detail servis dengan perhitungan modal yang benar
+	// Get detail servis dengan perhitungan modal 
 	rowsServis, err := database.DB.Query(`
 		SELECT 
 			ds_detail.id_detail,
@@ -105,13 +105,15 @@ func GetLaporanDetail(w http.ResponseWriter, r *http.Request) {
 			ds_detail.id_servis,
 			ds_detail.nama_pelanggan,
 			ds_detail.tipe_hp,
-			ds_detail.biaya_total,
-			ds_detail.modal_servis,
-			(ds_detail.biaya_total - ds_detail.modal_servis) as laba_servis
-		FROM detail_laporan_servis ds_detail
-		WHERE ds_detail.id_laporan = ?
-		ORDER BY ds_detail.id_detail DESC
-	`, id)
+    COALESCE(s.status_servis, 'unknown') as status_servis,
+		ds_detail.biaya_total,
+		ds_detail.modal_servis,
+		(ds_detail.biaya_total - ds_detail.modal_servis) as laba_servis
+	FROM detail_laporan_servis ds_detail
+	LEFT JOIN servis s ON ds_detail.id_servis = s.id_servis
+	WHERE ds_detail.id_laporan = ?
+	ORDER BY ds_detail.id_detail DESC
+`, id)
 
 	if err == nil {
 		defer rowsServis.Close()
@@ -121,6 +123,7 @@ func GetLaporanDetail(w http.ResponseWriter, r *http.Request) {
 			err := rowsServis.Scan(
 				&ds.IDDetail, &ds.IDLaporan, &ds.IDServis,
 				&ds.NamaPelanggan, &ds.TipeHP,
+				&ds.StatusServis,
 				&ds.BiayaTotal, &modalServis, &ds.LabaServis,
 			)
 			if err == nil {
@@ -133,7 +136,7 @@ func GetLaporanDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 // =======================================================
-// GENERATE LAPORAN - FIXED VERSION
+// GENERATE LAPORAN
 // =======================================================
 func GenerateLaporan(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -147,7 +150,7 @@ func GenerateLaporan(w http.ResponseWriter, r *http.Request) {
 
 	// Validate jenis laporan
 	validJenis := map[string]bool{
-		"harian": true, "mingguan": true, "bulanan": true, "custom": true,
+		"harian": true, "mingguan": true, "bulanan": true,
 	}
 	if !validJenis[req.JenisLaporan] {
 		w.WriteHeader(http.StatusBadRequest)
@@ -158,7 +161,7 @@ func GenerateLaporan(w http.ResponseWriter, r *http.Request) {
 	// Buat judul otomatis
 	judul := "Laporan " + strings.Title(req.JenisLaporan) + " - " + req.TanggalAwal + " s/d " + req.TanggalAkhir
 
-	//  PERBAIKAN: Hitung total servis dan pendapatan
+	// Hitung total servis dan pendapatan
 	var totalServis int
 	var totalPendapatan float64
 
@@ -176,7 +179,6 @@ func GenerateLaporan(w http.ResponseWriter, r *http.Request) {
 		totalPendapatan = 0
 	}
 
-	//  PERBAIKAN: Hitung total MODAL (bukan harga jual!)
 	// Modal = harga beli barang yang digunakan untuk servis
 	var totalModal float64
 	
@@ -218,25 +220,26 @@ func GenerateLaporan(w http.ResponseWriter, r *http.Request) {
 
 	idLaporan, _ := result.LastInsertId()
 
-	//  PERBAIKAN: Insert detail servis dengan modal yang benar
+	//  Insert detail servis 
 	_, err = database.DB.Exec(`
 		INSERT INTO detail_laporan_servis (
-			id_laporan, id_servis, nama_pelanggan, tipe_hp, 
-			biaya_total, modal_servis, laba_servis
-		)
-		SELECT 
-			? as id_laporan,
-			s.id_servis,
-			s.nama_pelanggan,
-			s.tipe_hp,
-			s.biaya_total,
-			COALESCE(SUM(ds.jumlah * COALESCE(b.harga_modal, 0)), 0) as modal_servis,
-			(s.biaya_total - COALESCE(SUM(ds.jumlah * COALESCE(b.harga_modal, 0)), 0)) as laba_servis
-		FROM servis s
-		LEFT JOIN detail_servis ds ON s.id_servis = ds.id_servis
-		LEFT JOIN barang b ON ds.id_barang = b.id_barang
-		WHERE DATE(s.tanggal_masuk) BETWEEN ? AND ?
-		GROUP BY s.id_servis
+	id_laporan, id_servis, nama_pelanggan, tipe_hp, status_servis,
+	biaya_total, modal_servis, laba_servis
+)
+SELECT 
+	? as id_laporan,
+	s.id_servis,
+	s.nama_pelanggan,
+	s.tipe_hp,
+	s.status_servis,
+	s.biaya_total,
+	COALESCE(SUM(ds.jumlah * COALESCE(b.harga_modal, 0)), 0) as modal_servis,
+	(s.biaya_total - COALESCE(SUM(ds.jumlah * COALESCE(b.harga_modal, 0)), 0)) as laba_servis
+FROM servis s
+LEFT JOIN detail_servis ds ON s.id_servis = ds.id_servis
+LEFT JOIN barang b ON ds.id_barang = b.id_barang
+WHERE DATE(s.tanggal_masuk) BETWEEN ? AND ?
+GROUP BY s.id_servis
 	`, idLaporan, req.TanggalAwal, req.TanggalAkhir)
 
 	if err != nil {
@@ -256,12 +259,12 @@ func GenerateLaporan(w http.ResponseWriter, r *http.Request) {
 }
 
 // =======================================================
-// GET DASHBOARD STATS
+// GET Data status
 // =======================================================
-func GetDashboardStats(w http.ResponseWriter, r *http.Request) {
+func GetDataStats(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var stats models.DashboardStats
+	var stats models.DataStats
 	today := time.Now().Format("2006-01-02")
 
 	//  Hari ini 
@@ -317,25 +320,6 @@ func GetDashboardStats(w http.ResponseWriter, r *http.Request) {
 	`).Scan(&modalBulan)
 	stats.BulanIni.LabaBersih = stats.BulanIni.TotalPendapatan - modalBulan
 
-	// Chart pendapatan 7 hari terakhir
-	rowsChart, err := database.DB.Query(`
-		SELECT 
-			DATE(tanggal_masuk) as tanggal,
-			COALESCE(SUM(biaya_total), 0) as pendapatan
-		FROM servis
-		WHERE DATE(tanggal_masuk) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-		GROUP BY DATE(tanggal_masuk)
-		ORDER BY tanggal ASC
-	`)
-	if err == nil {
-		defer rowsChart.Close()
-		for rowsChart.Next() {
-			var item models.ChartData
-			if rowsChart.Scan(&item.Tanggal, &item.Pendapatan) == nil {
-				stats.ChartPendapatan = append(stats.ChartPendapatan, item)
-			}
-		}
-	}
 
 	json.NewEncoder(w).Encode(stats)
 }

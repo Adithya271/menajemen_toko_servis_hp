@@ -8,7 +8,8 @@ type Props = {
 
 export default function ServisDetailView({ data }: Props) {
   const navigate = useNavigate()
-  
+  const detailTotal = data.detail.reduce((sum, d) => sum + d.biaya, 0)
+
   return (
     <div className="space-y-6">
       {/* ================= TOMBOL AKSI ================= */}
@@ -98,18 +99,38 @@ export default function ServisDetailView({ data }: Props) {
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              <tr className="bg-gray-50 font-bold">
-                <td colSpan={3} className="border px-3 py-2 text-right">
-                  Total
-                </td>
-                <td className="border px-3 py-2 text-right text-green-600">
-                  Rp {data.biaya_total.toLocaleString("id-ID")}
-                </td>
-              </tr>
-            </tfoot>
           </table>
         )}
+      </div>
+
+      {/* ================= BIAYA BREAKDOWN ================= */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h2 className="text-lg font-bold mb-4">Ringkasan Biaya</h2>
+
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-700">Biaya Detail Perbaikan</span>
+            <span className="font-semibold">
+              Rp {detailTotal.toLocaleString("id-ID")}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-gray-700">Biaya Layanan / Jasa</span>
+            <span className="font-semibold">
+              Rp {data.biaya_servis.toLocaleString("id-ID")}
+            </span>
+          </div>
+
+          <div className="border-t border-blue-300 pt-3 flex justify-between items-center">
+            <span className="text-lg font-bold text-gray-800">
+              Total Pembayaran
+            </span>
+            <span className="text-2xl font-bold text-green-600">
+              Rp {data.biaya_total.toLocaleString("id-ID")}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   )

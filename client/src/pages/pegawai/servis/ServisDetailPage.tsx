@@ -3,9 +3,9 @@ import { useNavigate, useParams } from "react-router-dom"
 import PegawaiLayout from "../../../components/pegawai/PegawaiLayouts"
 import type { Barang, ServisData } from "../types/servis"
 
-import ServisForm from "./tambah dan update service/ServisForm"
-import ServisDetailTable from "./tambah dan update service/ServisDetailTable"
-import ServisSummary from "./tambah dan update service/ServisSummary"
+import ServisForm from "./form tambah dan update service/ServisForm"
+import ServisSummary from "./form tambah dan update service/ServisSummary"
+import ServisDetailTable from "./form tambah dan update service/ServisDetailTable"
 import ServisDetailView from "./detail service/ServisDetailView"
 import WhatsAppNotifier from "./detail service/WhatsAppNotifier"
 
@@ -27,6 +27,7 @@ export default function ServisDetailPage({
     tipe_hp: "",
     keluhan: "",
     status_servis: "pending",
+    biaya_servis: 0,
     biaya_total: 0,
     tanggal_masuk: new Date().toISOString().slice(0, 10),
     tanggal_selesai: null,
@@ -65,10 +66,15 @@ export default function ServisDetailPage({
           tanggal_selesai: data.tanggal_selesai
             ? data.tanggal_selesai.split("T")[0]
             : null,
-        })
+        }),
       )
       .finally(() => setLoading(false))
   }, [id, mode, token])
+
+  // =========================
+  // CALCULATE DETAIL TOTAL
+  // =========================
+  const detailTotal = form.detail.reduce((sum, d) => sum + d.biaya, 0)
 
   // =========================
   // SUBMIT
@@ -79,7 +85,7 @@ export default function ServisDetailPage({
       const hasZeroQty = form.detail.some((item) => item.jumlah === 0)
       if (hasZeroQty) {
         alert(
-          " Ada barang dengan jumlah 0!\n\nSilakan input ulang jumlah barang yang digunakan atau hapus item tersebut."
+          " Ada barang dengan jumlah 0!\n\nSilakan input ulang jumlah barang yang digunakan atau hapus item tersebut.",
         )
         return
       }
@@ -93,6 +99,9 @@ export default function ServisDetailPage({
 
     console.log("=== FORM DATA ===", form)
 
+    // Calculate final total: detail + biaya_servis
+    const finalTotal = detailTotal + form.biaya_servis
+
     //  FORMAT PAYLOAD dengan benar
     const payload = {
       nama_pelanggan: form.nama_pelanggan,
@@ -100,7 +109,8 @@ export default function ServisDetailPage({
       tipe_hp: form.tipe_hp,
       keluhan: form.keluhan,
       status_servis: form.status_servis,
-      biaya_total: form.biaya_total,
+      biaya_servis: Number(form.biaya_servis),
+      biaya_total: finalTotal,
       tanggal_masuk: form.tanggal_masuk,
       tanggal_selesai: form.tanggal_selesai || null,
       id_user: form.id_user,
@@ -129,7 +139,7 @@ export default function ServisDetailPage({
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
-        }
+        },
       )
 
       const result = await res.json()
@@ -139,7 +149,7 @@ export default function ServisDetailPage({
         alert(
           mode === "edit"
             ? " Berhasil update data servis!"
-            : " Berhasil menambah data servis!"
+            : " Berhasil menambah data servis!",
         )
         navigate("/pegawai/servis")
       } else {
@@ -178,17 +188,14 @@ export default function ServisDetailPage({
             <ServisDetailTable
               items={form.detail}
               barangList={barangList}
-              onChange={(items) =>
-                setForm({
-                  ...form,
-                  detail: items,
-                  biaya_total: items.reduce((sum, d) => sum + d.biaya, 0),
-                })
-              }
+              onChange={(items) => setForm({ ...form, detail: items })}
               isEditMode={mode === "edit"}
             />
 
-            <ServisSummary total={form.biaya_total} />
+            <ServisSummary
+              detailTotal={detailTotal}
+              biayadLayanan={form.biaya_servis}
+            />
 
             <div className="mt-6 flex gap-3 justify-end">
               <button

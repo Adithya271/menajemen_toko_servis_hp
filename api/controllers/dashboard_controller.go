@@ -54,40 +54,50 @@ type BarangMenipis struct {
 		var stats DashboardAdminStats
 		today := time.Now().Format("2006-01-02")
 
-		// 1. Total Servis Hari Ini
-		err := database.DB.QueryRow(`
-			SELECT COUNT(*) 
-			FROM servis 
-			WHERE DATE(tanggal_masuk) = ?
-		`, today).Scan(&stats.TotalServisHariIni)
-		
-		if err != nil {
-			log.Println(" Error query total servis hari ini:", err)
-			stats.TotalServisHariIni = 0
-		}
+// Get current date for month/year filtering
+	now := time.Now()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	endOfMonth := startOfMonth.AddDate(0, 1, 0).Add(-time.Second)
 
-	// 2. Servis Dalam Perbaikan (semua, tidak hanya hari ini)
-	err = database.DB.QueryRow(`
-			SELECT COUNT(*) 
-			FROM servis 
-			WHERE status_servis = 'dalam_perbaikan'
-	`).Scan(&stats.ServisDalamPerbaikan)
+	startOfMonthStr := startOfMonth.Format("2006-01-02")
+	endOfMonthStr := endOfMonth.Format("2006-01-02")
 
+	// 1. Total Servis Bulan Ini
+	err := database.DB.QueryRow(`
+		SELECT COUNT(*) 
+		FROM servis 
+		WHERE DATE(tanggal_masuk) >= ? AND DATE(tanggal_masuk) <= ?
+	`, startOfMonthStr, endOfMonthStr).Scan(&stats.TotalServisHariIni)
+	
 	if err != nil {
-			log.Println(" Error query servis dalam perbaikan:", err)
-			stats.ServisDalamPerbaikan = 0
+		log.Println(" Error query total servis bulan ini:", err)
+		stats.TotalServisHariIni = 0
 	}
 
-	// 3. Servis Selesai (semua, tidak hanya hari ini)
+	// 2. Servis Dalam Perbaikan (bulan ini)
 	err = database.DB.QueryRow(`
-			SELECT COUNT(*) 
-			FROM servis 
-			WHERE status_servis = 'selesai' OR status_servis = 'siap_diambil'
-	`).Scan(&stats.ServisSelesai)
+		SELECT COUNT(*) 
+		FROM servis 
+		WHERE status_servis = 'dalam_perbaikan'
+		AND DATE(tanggal_masuk) >= ? AND DATE(tanggal_masuk) <= ?
+	`, startOfMonthStr, endOfMonthStr).Scan(&stats.ServisDalamPerbaikan)
 
 	if err != nil {
-			log.Println(" Error query servis selesai:", err)
-			stats.ServisSelesai = 0
+		log.Println(" Error query servis dalam perbaikan bulan ini:", err)
+		stats.ServisDalamPerbaikan = 0
+	}
+
+	// 3. Servis Selesai (bulan ini)
+	err = database.DB.QueryRow(`
+		SELECT COUNT(*) 
+		FROM servis 
+		WHERE (status_servis = 'selesai' OR status_servis = 'siap_diambil')
+		AND DATE(tanggal_masuk) >= ? AND DATE(tanggal_masuk) <= ?
+	`, startOfMonthStr, endOfMonthStr).Scan(&stats.ServisSelesai)
+
+	if err != nil {
+		log.Println(" Error query servis selesai bulan ini:", err)
+		stats.ServisSelesai = 0
 	}
 
 		// 4. Stok Barang Menipis (stok <= 5)
@@ -103,16 +113,17 @@ type BarangMenipis struct {
 		}
 
 		// 5. Total Pendapatan Hari Ini
-		err = database.DB.QueryRow(`
-			SELECT COALESCE(SUM(biaya_total), 0) 
-			FROM servis 
-			WHERE DATE(tanggal_masuk) = ?
-		`, today).Scan(&stats.TotalPendapatanHariIni)
-		
-		if err != nil {
-			log.Println(" Error query pendapatan hari ini:", err)
-			stats.TotalPendapatanHariIni = 0
-		}
+	err = database.DB.QueryRow(`
+		SELECT COALESCE(SUM(biaya_total), 0) 
+		FROM servis 
+		WHERE (status_servis = 'selesai' OR status_servis = 'siap_diambil')
+		AND DATE(tanggal_selesai) = ?
+	`, today).Scan(&stats.TotalPendapatanHariIni)
+	
+	if err != nil {
+		log.Println(" Error query pendapatan hari ini:", err)
+		stats.TotalPendapatanHariIni = 0
+	}
 
 		// 6. Total Pendapatan Bulan Ini
 		err = database.DB.QueryRow(`
@@ -202,41 +213,50 @@ type BarangMenipis struct {
 
 		var stats DashboardPegawaiStats
 		today := time.Now().Format("2006-01-02")
+	// Get current date for month/year filtering
+	now := time.Now()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	endOfMonth := startOfMonth.AddDate(0, 1, 0).Add(-time.Second)
 
-		// 1. Total Servis Hari Ini
-		err := database.DB.QueryRow(`
-			SELECT COUNT(*) 
-			FROM servis 
-			WHERE DATE(tanggal_masuk) = ?
-		`, today).Scan(&stats.TotalServisHariIni)
-		
-		if err != nil {
-			log.Println(" Error query total servis hari ini:", err)
-			stats.TotalServisHariIni = 0
-		}
+	startOfMonthStr := startOfMonth.Format("2006-01-02")
+	endOfMonthStr := endOfMonth.Format("2006-01-02")
 
-			// 2. Servis Dalam Perbaikan (semua, tidak hanya hari ini)
-	err = database.DB.QueryRow(`
-			SELECT COUNT(*) 
-			FROM servis 
-			WHERE status_servis = 'dalam_perbaikan'
-	`).Scan(&stats.ServisDalamPerbaikan)
-
+	// 1. Total Servis Bulan Ini
+	err := database.DB.QueryRow(`
+		SELECT COUNT(*) 
+		FROM servis 
+		WHERE DATE(tanggal_masuk) >= ? AND DATE(tanggal_masuk) <= ?
+	`, startOfMonthStr, endOfMonthStr).Scan(&stats.TotalServisHariIni)
+	
 	if err != nil {
-			log.Println(" Error query servis dalam perbaikan:", err)
-			stats.ServisDalamPerbaikan = 0
+		log.Println(" Error query total servis bulan ini:", err)
+		stats.TotalServisHariIni = 0
 	}
 
-	// 3. Servis Selesai (semua, tidak hanya hari ini)
+	// 2. Servis Dalam Perbaikan (bulan ini)
 	err = database.DB.QueryRow(`
-			SELECT COUNT(*) 
-			FROM servis 
-			WHERE status_servis = 'selesai' OR status_servis = 'siap_diambil'
-	`).Scan(&stats.ServisSelesai)
+		SELECT COUNT(*) 
+		FROM servis 
+		WHERE status_servis = 'dalam_perbaikan'
+		AND DATE(tanggal_masuk) >= ? AND DATE(tanggal_masuk) <= ?
+	`, startOfMonthStr, endOfMonthStr).Scan(&stats.ServisDalamPerbaikan)
 
 	if err != nil {
-			log.Println(" Error query servis selesai:", err)
-			stats.ServisSelesai = 0
+		log.Println(" Error query servis dalam perbaikan bulan ini:", err)
+		stats.ServisDalamPerbaikan = 0
+	}
+
+	// 3. Servis Selesai (bulan ini)
+	err = database.DB.QueryRow(`
+		SELECT COUNT(*) 
+		FROM servis 
+		WHERE (status_servis = 'selesai' OR status_servis = 'siap_diambil')
+		AND DATE(tanggal_masuk) >= ? AND DATE(tanggal_masuk) <= ?
+	`, startOfMonthStr, endOfMonthStr).Scan(&stats.ServisSelesai)
+
+	if err != nil {
+		log.Println(" Error query servis selesai bulan ini:", err)
+		stats.ServisSelesai = 0
 	}
 
 		// 4. Stok Barang Menipis (stok <= 5)
@@ -252,16 +272,17 @@ type BarangMenipis struct {
 		}
 
 		// 5. Total Pendapatan Hari Ini
-		err = database.DB.QueryRow(`
-			SELECT COALESCE(SUM(biaya_total), 0) 
-			FROM servis 
-			WHERE DATE(tanggal_masuk) = ?
-		`, today).Scan(&stats.TotalPendapatanHariIni)
-		
-		if err != nil {
-			log.Println(" Error query pendapatan hari ini:", err)
-			stats.TotalPendapatanHariIni = 0
-		}
+	err = database.DB.QueryRow(`
+		SELECT COALESCE(SUM(biaya_total), 0) 
+		FROM servis 
+		WHERE (status_servis = 'selesai' OR status_servis = 'siap_diambil')
+		AND DATE(tanggal_selesai) = ?
+	`, today).Scan(&stats.TotalPendapatanHariIni)
+	
+	if err != nil {
+		log.Println(" Error query pendapatan hari ini:", err)
+		stats.TotalPendapatanHariIni = 0
+	}
 
 		// 6. Total Pendapatan Bulan Ini
 		err = database.DB.QueryRow(`

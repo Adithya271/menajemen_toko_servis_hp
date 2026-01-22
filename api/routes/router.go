@@ -96,7 +96,7 @@ func RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/admin/dashboard", func(w http.ResponseWriter, r *http.Request) {
 		(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
-				controllers.GetDashboardStats(w, r)
+				controllers.GetDataStats(w, r)
 			} else {
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
@@ -247,7 +247,7 @@ func RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/pegawai/dashboard", func(w http.ResponseWriter, r *http.Request) {
 		(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
-				controllers.GetDashboardStats(w, r)
+				controllers.GetDataStats(w, r)
 			} else {
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}

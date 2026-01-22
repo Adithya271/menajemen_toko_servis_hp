@@ -44,7 +44,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Sidebar */}
       <aside className="bg-gray-900 text-white w-64 p-5 fixed h-screen overflow-y-auto">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold">Service HP</h2>
+          <h2 className="text-2xl font-bold">SFA Ponsel</h2>
           <p className="text-sm text-gray-400">Admin Panel</p>
         </div>
 

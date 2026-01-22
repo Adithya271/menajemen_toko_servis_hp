@@ -23,6 +23,8 @@ function formatStatus(status: string): string {
  * Generate HTML untuk nota servis
  */
 function generateNotaHTML(data: ServisData): string {
+  const detailTotal = data.detail.reduce((sum, d) => sum + d.biaya, 0)
+
   return `
     <!DOCTYPE html>
     <html>
@@ -121,6 +123,30 @@ function generateNotaHTML(data: ServisData): string {
           color: #16a34a;
           font-size: 16px;
         }
+        .biaya-breakdown {
+          background: #e0f2fe;
+          border: 1px solid #0284c7;
+          padding: 12px;
+          border-radius: 4px;
+          margin-top: 15px;
+          font-size: 12px;
+        }
+        .biaya-item {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+        }
+        .biaya-item:last-child {
+          margin-bottom: 0;
+        }
+        .biaya-total-row {
+          border-top: 2px solid #0284c7;
+          padding-top: 8px;
+          margin-top: 8px;
+          font-weight: bold;
+          font-size: 14px;
+          color: #16a34a;
+        }
         .footer {
           margin-top: 30px;
           padding-top: 15px;
@@ -215,26 +241,36 @@ function generateNotaHTML(data: ServisData): string {
                     <td>${d.deskripsi}</td>
                     <td class="text-center">${d.jumlah}</td>
                     <td class="text-right">Rp ${d.harga_satuan.toLocaleString(
-                      "id-ID"
+                      "id-ID",
                     )}</td>
                     <td class="text-right">Rp ${d.biaya.toLocaleString(
-                      "id-ID"
+                      "id-ID",
                     )}</td>
                   </tr>
-                `
+                `,
                   )
                   .join("")}
               </tbody>
-              <tfoot>
-                <tr class="total-row">
-                  <td colspan="3" class="text-right">Total Pembayaran:</td>
-                  <td class="text-right total-amount">Rp ${data.biaya_total.toLocaleString(
-                    "id-ID"
-                  )}</td>
-                </tr>
-              </tfoot>
             </table>`
           }
+        </div>
+
+        <div class="section">
+          <div class="section-title">Ringkasan Biaya</div>
+          <div class="biaya-breakdown">
+            <div class="biaya-item">
+              <span>Biaya Detail Perbaikan:</span>
+              <strong>Rp ${detailTotal.toLocaleString("id-ID")}</strong>
+            </div>
+            <div class="biaya-item">
+              <span>Biaya Layanan / Jasa:</span>
+              <strong>Rp ${data.biaya_servis.toLocaleString("id-ID")}</strong>
+            </div>
+            <div class="biaya-item biaya-total-row">
+              <span>Total Pembayaran:</span>
+              <strong>Rp ${data.biaya_total.toLocaleString("id-ID")}</strong>
+            </div>
+          </div>
         </div>
 
         <div class="section">
@@ -254,7 +290,7 @@ function generateNotaHTML(data: ServisData): string {
         <div class="footer">
           <p>Terima kasih atas kepercayaan Anda</p>
           <p style="margin-top: 5px;">Dicetak pada: ${new Date().toLocaleString(
-            "id-ID"
+            "id-ID",
           )}</p>
         </div>
       </div>

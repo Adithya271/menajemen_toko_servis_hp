@@ -71,7 +71,7 @@ func CreateBarang(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("📦 Request create barang: %s (Harga: %.2f, Modal: %.2f)", 
+	log.Printf(" Request create barang: %s (Harga: %.2f, Modal: %.2f)", 
 		req.NamaBarang, req.Harga, req.HargaModal)
 
 	// Validasi

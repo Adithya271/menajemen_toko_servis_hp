@@ -162,6 +162,9 @@ export default function LandingPage() {
             <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
               Toko Service Handphone
             </h1>
+            <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
+              SFA Ponsel
+            </h1>
             <p className="mt-5 text-lg md:text-xl text-purple-100">
               Solusi profesional untuk perbaikan, layanan digital, dan suku
               cadang handphone Anda
@@ -206,7 +209,7 @@ export default function LandingPage() {
                 <li>* Program Ulang</li>
                 <li>* Ganti Tombol</li>
                 <li>* Ganti Port Cas</li>
-                <li>* Kerusakan Air</li>
+                <li>* Kemasukan Air</li>
               </ul>
             </div>
 
@@ -344,7 +347,7 @@ export default function LandingPage() {
                               <p className="text-gray-500">Tanggal Masuk</p>
                               <p className="font-medium">
                                 {new Date(
-                                  service.tanggal_masuk
+                                  service.tanggal_masuk,
                                 ).toLocaleDateString("id-ID")}
                               </p>
                             </div>
@@ -425,7 +428,7 @@ export default function LandingPage() {
                         <p className="text-gray-500">Tanggal Masuk</p>
                         <p className="font-semibold">
                           {new Date(
-                            selectedService.tanggal_masuk
+                            selectedService.tanggal_masuk,
                           ).toLocaleDateString("id-ID")}
                         </p>
                       </div>
@@ -481,7 +484,7 @@ export default function LandingPage() {
                             <td className="text-right p-3 border text-purple-600 text-lg">
                               Rp{" "}
                               {selectedService.biaya_total.toLocaleString(
-                                "id-ID"
+                                "id-ID",
                               )}
                             </td>
                           </tr>
@@ -571,17 +574,15 @@ export default function LandingPage() {
           <p className="text-xl mb-8 text-purple-100">
             Hubungi kami sekarang dan dapatkan konsultasi gratis!
           </p>
-          <button
-            onClick={() => window.open("https://wa.me/6281234567890", "_blank")}
-            className="bg-white text-purple-600 px-8 py-4 rounded-xl font-bold text-lg hover:shadow-2xl transform hover:scale-105 transition-all flex items-center justify-center gap-2 mx-auto"
-          >
+
+          <div className="flex items-center justify-center gap-2 text-lg font-semibold">
             <img
               src="/images/icons/whatsapp.png"
               alt="WhatsApp"
               className="w-6 h-6"
             />
-            Hubungi Kami via WhatsApp
-          </button>
+            <span>WhatsApp: 0822-8349-6287</span>
+          </div>
         </div>
       </section>
 
@@ -589,9 +590,9 @@ export default function LandingPage() {
       <footer className="bg-gray-900 text-gray-300 py-8 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <p className="mb-2">
-            © 2025 Toko Service Handphone. All rights reserved.
+            Toko Service Handphone SFA Ponsel
           </p>
-          <p className="text-sm text-gray-500">Melayani dengan sepenuh hati</p>
+          <p className="text-sm text-gray-500">Kami melayani dengan sepenuh hati</p>
         </div>
       </footer>
     </div>

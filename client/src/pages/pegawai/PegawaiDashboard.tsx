@@ -130,7 +130,7 @@ export default function PegawaiDashboard() {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <p className="text-blue-100 text-sm mb-1">
-                      Total Servis Hari Ini
+                      Total Servis Bulan Ini
                     </p>
                     <h3 className="text-4xl font-bold">
                       {stats?.total_servis_hari_ini || 0}
@@ -149,7 +149,7 @@ export default function PegawaiDashboard() {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <p className="text-amber-100 text-sm mb-1">
-                      Servis Dalam Perbaikan
+                      Servis Dalam Perbaikan Bulan Ini
                     </p>
                     <h3 className="text-4xl font-bold">
                       {stats?.servis_dalam_perbaikan || 0}
@@ -168,7 +168,7 @@ export default function PegawaiDashboard() {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <p className="text-green-100 text-sm mb-1">
-                      Servis Selesai
+                      Servis Selesai Bulan Ini
                     </p>
                     <h3 className="text-4xl font-bold">
                       {stats?.servis_selesai || 0}
@@ -226,9 +226,7 @@ export default function PegawaiDashboard() {
                 <div className="text-3xl font-bold text-green-600 mb-2">
                   {formatCurrency(stats?.total_pendapatan_hari_ini || 0)}
                 </div>
-                <p className="text-sm text-gray-600">
-                  Dari {stats?.total_servis_hari_ini || 0} transaksi
-                </p>
+               
               </div>
 
               <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">

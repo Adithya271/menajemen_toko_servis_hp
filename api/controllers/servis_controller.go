@@ -31,6 +31,11 @@ func normalizeStatus(input string) string {
 	return "pending"
 }
 
+// Helper: Calculate total biaya (detail + servis)
+func calculateTotalBiaya(detailBiaya float64, biayadLayanan float64) float64 {
+	return detailBiaya + biayadLayanan
+}
+
 // =======================================================
 // SEARCH SERVIS (PUBLIC - untuk Landing Page)
 // =======================================================
@@ -59,6 +64,7 @@ func SearchServis(w http.ResponseWriter, r *http.Request) {
 			s.tipe_hp,
 			s.keluhan,
 			s.status_servis,
+			s.biaya_servis,
 			s.biaya_total,
 			s.tanggal_masuk,
 			s.tanggal_selesai
@@ -104,6 +110,7 @@ func SearchServis(w http.ResponseWriter, r *http.Request) {
 			&s.TipeHP,
 			&s.Keluhan,
 			&s.StatusServis,
+			&s.BiayaServis,
 			&s.BiayaTotal,
 			&s.TanggalMasuk,
 			&tanggalSelesai,
@@ -186,6 +193,7 @@ func GetAllServis(w http.ResponseWriter, r *http.Request) {
 			s.tipe_hp,
 			s.keluhan,
 			s.status_servis,
+			s.biaya_servis,
 			s.biaya_total,
 			s.tanggal_masuk,
 			s.tanggal_selesai
@@ -213,6 +221,7 @@ func GetAllServis(w http.ResponseWriter, r *http.Request) {
 			&s.TipeHP,
 			&s.Keluhan,
 			&s.StatusServis,
+			&s.BiayaServis,
 			&s.BiayaTotal,
 			&s.TanggalMasuk,
 			&tglSelesai,
@@ -261,27 +270,29 @@ func CreateServis(w http.ResponseWriter, r *http.Request) {
 	var res sql.Result
 	if strings.TrimSpace(req.TanggalMasuk) == "" {
 		res, err = tx.Exec(`
-			INSERT INTO servis (nama_pelanggan, no_whatsapp, tipe_hp, keluhan, status_servis, biaya_total, tanggal_masuk, tanggal_selesai)
-			VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
+			INSERT INTO servis (nama_pelanggan, no_whatsapp, tipe_hp, keluhan, status_servis, biaya_servis, biaya_total, tanggal_masuk, tanggal_selesai)
+			VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)
 		`,
 			req.NamaPelanggan,
 			req.NoWhatsapp,
 			req.TipeHP,
 			req.Keluhan,
 			req.StatusServis,
+			req.BiayaServis,
 			0,
 			req.TanggalSelesai,
 		)
 	} else {
 		res, err = tx.Exec(`
-			INSERT INTO servis (nama_pelanggan, no_whatsapp, tipe_hp, keluhan, status_servis, biaya_total, tanggal_masuk, tanggal_selesai)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO servis (nama_pelanggan, no_whatsapp, tipe_hp, keluhan, status_servis, biaya_servis, biaya_total, tanggal_masuk, tanggal_selesai)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`,
 			req.NamaPelanggan,
 			req.NoWhatsapp,
 			req.TipeHP,
 			req.Keluhan,
 			req.StatusServis,
+			req.BiayaServis,
 			0,
 			req.TanggalMasuk,
 			req.TanggalSelesai,
@@ -298,12 +309,12 @@ func CreateServis(w http.ResponseWriter, r *http.Request) {
 	newID64, _ := res.LastInsertId()
 	newID := int(newID64)
 
-	var totalBiaya float64 = 0
+	var totalDetailBiaya float64 = 0
 	for _, d := range req.Detail {
 		_, err := tx.Exec(`
-			INSERT INTO detail_servis (id_servis, id_barang, deskripsi, jumlah, harga_satuan)
-			VALUES (?, ?, ?, ?, ?)
-		`, newID, d.IDBarang, d.Deskripsi, d.Jumlah, d.HargaSatuan)
+			INSERT INTO detail_servis (id_servis, id_barang, deskripsi, jumlah, harga_satuan, biaya)
+			VALUES (?, ?, ?, ?, ?, ?)
+		`, newID, d.IDBarang, d.Deskripsi, d.Jumlah, d.HargaSatuan, d.Biaya)
 		if err != nil {
 			tx.Rollback()
 			log.Println(" Error insert detail:", err)
@@ -311,18 +322,19 @@ func CreateServis(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		totalBiaya += d.Biaya
+		totalDetailBiaya += d.Biaya
 	}
 
-	// Update biaya_total if details exist
-	if totalBiaya > 0 {
-		if _, err := tx.Exec(`UPDATE servis SET biaya_total=? WHERE id_servis=?`, totalBiaya, newID); err != nil {
-			tx.Rollback()
-			log.Println(" Error update biaya_total:", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update total biaya"})
-			return
-		}
+	// Calculate total: detail biaya + biaya_servis
+	totalBiaya := calculateTotalBiaya(totalDetailBiaya, req.BiayaServis)
+
+	// Update biaya_total
+	if _, err := tx.Exec(`UPDATE servis SET biaya_total=? WHERE id_servis=?`, totalBiaya, newID); err != nil {
+		tx.Rollback()
+		log.Println(" Error update biaya_total:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update total biaya"})
+		return
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -358,7 +370,7 @@ func GetServisDetail(w http.ResponseWriter, r *http.Request) {
 	err = database.DB.QueryRow(`
 		SELECT 
 			id_servis, nama_pelanggan, no_whatsapp, tipe_hp, keluhan,
-			status_servis, biaya_total, tanggal_masuk, tanggal_selesai
+			status_servis, biaya_servis, biaya_total, tanggal_masuk, tanggal_selesai
 		FROM servis WHERE id_servis = ?
 	`, id).Scan(
 		&s.IDServis,
@@ -367,6 +379,7 @@ func GetServisDetail(w http.ResponseWriter, r *http.Request) {
 		&s.TipeHP,
 		&s.Keluhan,
 		&s.StatusServis,
+		&s.BiayaServis,
 		&s.BiayaTotal,
 		&s.TanggalMasuk,
 		&tglSelesai,
@@ -452,7 +465,7 @@ func UpdateServis(w http.ResponseWriter, r *http.Request) {
 	_, err = tx.Exec(`
 		UPDATE servis SET
 			nama_pelanggan=?, no_whatsapp=?, tipe_hp=?, keluhan=?, 
-			status_servis=?, tanggal_masuk=?, tanggal_selesai=?
+			status_servis=?, biaya_servis=?, tanggal_masuk=?, tanggal_selesai=?
 		WHERE id_servis=?
 	`,
 		req.NamaPelanggan,
@@ -460,6 +473,7 @@ func UpdateServis(w http.ResponseWriter, r *http.Request) {
 		req.TipeHP,
 		req.Keluhan,
 		req.StatusServis,
+		req.BiayaServis,
 		req.TanggalMasuk,
 		req.TanggalSelesai,
 		id,
@@ -481,12 +495,12 @@ func UpdateServis(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var totalBiaya float64 = 0
+	var totalDetailBiaya float64 = 0
 	for _, d := range req.Detail {
 		_, err := tx.Exec(`
-			INSERT INTO detail_servis (id_servis, id_barang, deskripsi, jumlah, harga_satuan)
-			VALUES (?, ?, ?, ?, ?)
-		`, id, d.IDBarang, d.Deskripsi, d.Jumlah, d.HargaSatuan)
+			INSERT INTO detail_servis (id_servis, id_barang, deskripsi, jumlah, harga_satuan, biaya)
+			VALUES (?, ?, ?, ?, ?, ?)
+		`, id, d.IDBarang, d.Deskripsi, d.Jumlah, d.HargaSatuan, d.Biaya)
 		if err != nil {
 			tx.Rollback()
 			log.Println(" Error insert detail (update):", err)
@@ -494,10 +508,13 @@ func UpdateServis(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		totalBiaya += d.Biaya
+		totalDetailBiaya += d.Biaya
 	}
 
-	// update biaya_total
+	// Calculate total: detail biaya + biaya_servis
+	totalBiaya := calculateTotalBiaya(totalDetailBiaya, req.BiayaServis)
+
+	// Update biaya_total
 	if _, err := tx.Exec(`UPDATE servis SET biaya_total=? WHERE id_servis=?`, totalBiaya, id); err != nil {
 		tx.Rollback()
 		log.Println(" Error update biaya_total:", err)
@@ -567,6 +584,8 @@ func DeleteServis(w http.ResponseWriter, r *http.Request) {
 // DETAIL SERVIS SUB-OPERATIONS
 // =======================================================
 func AddDetailServis(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	var d models.DetailServis
 	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -575,9 +594,9 @@ func AddDetailServis(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := database.DB.Exec(`
-		INSERT INTO detail_servis (id_servis, id_barang, deskripsi, jumlah, harga_satuan)
-		VALUES (?, ?, ?, ?, ?)
-	`, d.IDServis, d.IDBarang, d.Deskripsi, d.Jumlah, d.HargaSatuan)
+		INSERT INTO detail_servis (id_servis, id_barang, deskripsi, jumlah, harga_satuan, biaya)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`, d.IDServis, d.IDBarang, d.Deskripsi, d.Jumlah, d.HargaSatuan, d.Biaya)
 	if err != nil {
 		log.Println(" Error insert detail:", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -587,6 +606,7 @@ func AddDetailServis(w http.ResponseWriter, r *http.Request) {
 
 	newID, _ := result.LastInsertId()
 
+	// Update biaya_total: add detail biaya only (biaya_servis sudah ada)
 	if _, err := database.DB.Exec(`UPDATE servis SET biaya_total = COALESCE(biaya_total,0) + ? WHERE id_servis = ?`, d.Biaya, d.IDServis); err != nil {
 		log.Println(" Error update biaya_total after add detail:", err)
 	}
@@ -598,6 +618,8 @@ func AddDetailServis(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateDetailServis(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/pegawai/detail-servis/")
 	id, _ := strconv.Atoi(idStr)
 
@@ -625,8 +647,13 @@ func UpdateDetailServis(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Adjust biaya_total: kurangi old biaya, tambah new biaya
 	if oldBiaya != 0 {
 		if _, err := database.DB.Exec(`UPDATE servis SET biaya_total = COALESCE(biaya_total,0) - ? + ? WHERE id_servis = ?`, oldBiaya, d.Biaya, d.IDServis); err != nil {
+			log.Println(" Error adjust biaya_total after update detail:", err)
+		}
+	} else {
+		if _, err := database.DB.Exec(`UPDATE servis SET biaya_total = COALESCE(biaya_total,0) + ? WHERE id_servis = ?`, d.Biaya, d.IDServis); err != nil {
 			log.Println(" Error adjust biaya_total after update detail:", err)
 		}
 	}
@@ -635,6 +662,8 @@ func UpdateDetailServis(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteDetailServis(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/pegawai/detail-servis/")
 	id, _ := strconv.Atoi(idStr)
 
@@ -653,6 +682,7 @@ func DeleteDetailServis(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Update biaya_total: kurangi biaya detail
 	if idServis != 0 {
 		if _, err := database.DB.Exec(`UPDATE servis SET biaya_total = COALESCE(biaya_total,0) - ? WHERE id_servis = ?`, biaya, idServis); err != nil {
 			log.Println(" Error update biaya_total after delete detail:", err)

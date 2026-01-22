@@ -8,8 +8,6 @@ type Props = {
 export default function ServisForm({ form, setForm }: Props) {
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Data Servis</h2>
-
       <div className="grid grid-cols-2 gap-4">
         <Input
           label="Nama Pelanggan"
@@ -77,6 +75,23 @@ export default function ServisForm({ form, setForm }: Props) {
           rows={3}
           value={form.keluhan}
           onChange={(e) => setForm({ ...form, keluhan: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <label className="text-sm text-gray-600">Biaya Servis (Jasa)</label>
+        <input
+          type="number"
+          className="border rounded px-3 py-2 w-full"
+          value={form.biaya_servis}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              biaya_servis: Number(e.target.value),
+            })
+          }
+          placeholder="Contoh: 50000"
+          min={0}
         />
       </div>
     </div>

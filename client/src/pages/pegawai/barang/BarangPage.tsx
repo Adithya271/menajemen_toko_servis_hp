@@ -21,6 +21,10 @@ export default function PegawaiBarangPage() {
     harga_modal: 0,
   })
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
   const token = localStorage.getItem("token") || ""
 
   async function fetchBarang() {
@@ -34,10 +38,11 @@ export default function PegawaiBarangPage() {
 
       const data = await res.json()
       setList(data)
+      setCurrentPage(1) // Reset ke halaman 1 saat fetch
     } catch (err) {
       alert(
         "Gagal mengambil data barang: " +
-          (err instanceof Error ? err.message : String(err))
+          (err instanceof Error ? err.message : String(err)),
       )
     } finally {
       setLoading(false)
@@ -65,7 +70,7 @@ export default function PegawaiBarangPage() {
     setShowModal(true)
   }
 
-  //  AUTO CALCULATE: Ketika harga jual berubah, otomatis hitung modal
+  //  AUTO Ketika harga jual berubah, otomatis hitung modal
   function handleHargaChange(hargaJual: number) {
     const hargaModal = Math.round(hargaJual * 0.6) // 60% dari harga jual
     setCurrent({
@@ -126,13 +131,14 @@ export default function PegawaiBarangPage() {
       alert(
         isEdit
           ? " Barang berhasil diperbarui!"
-          : " Barang berhasil ditambahkan!"
+          : " Barang berhasil ditambahkan!",
       )
       setShowModal(false)
       fetchBarang()
     } catch (err) {
       alert(
-        "Gagal menyimpan: " + (err instanceof Error ? err.message : String(err))
+        "Gagal menyimpan: " +
+          (err instanceof Error ? err.message : String(err)),
       )
     }
   }
@@ -146,7 +152,7 @@ export default function PegawaiBarangPage() {
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       )
 
       if (!res.ok) throw new Error("Delete failed")
@@ -173,6 +179,12 @@ export default function PegawaiBarangPage() {
     return (((harga - modal) / harga) * 100).toFixed(1)
   }
 
+  // Pagination logic
+  const totalPages = Math.ceil(list.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentData = list.slice(startIndex, endIndex)
+
   return (
     <PegawaiLayout>
       <div>
@@ -195,6 +207,7 @@ export default function PegawaiBarangPage() {
           <table className="min-w-full">
             <thead className="bg-gray-100">
               <tr>
+                <th className="p-3 text-center w-12">No</th>
                 <th className="p-3 text-left">Nama Barang</th>
                 <th className="p-3 text-center">Stok</th>
                 <th className="p-3 text-right">Harga Modal</th>
@@ -206,19 +219,22 @@ export default function PegawaiBarangPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="p-4 text-center">
+                  <td colSpan={7} className="p-4 text-center">
                     Loading...
                   </td>
                 </tr>
               ) : list.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-4 text-center text-gray-500">
+                  <td colSpan={7} className="p-4 text-center text-gray-500">
                     Belum ada data barang
                   </td>
                 </tr>
               ) : (
-                list.map((b) => (
+                currentData.map((b, index) => (
                   <tr key={b.id_barang} className="border-t hover:bg-gray-50">
+                    <td className="p-3 text-center text-sm text-gray-600">
+                      {startIndex + index + 1}
+                    </td>
                     <td className="p-3 font-medium">{b.nama_barang}</td>
                     <td className="p-3 text-center">
                       <span
@@ -226,8 +242,8 @@ export default function PegawaiBarangPage() {
                           b.stok === 0
                             ? "bg-red-100 text-red-700"
                             : b.stok < 4
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-green-100 text-green-700"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-green-100 text-green-700"
                         }`}
                       >
                         {b.stok}
@@ -264,6 +280,54 @@ export default function PegawaiBarangPage() {
             </tbody>
           </table>
         </div>
+
+        {/* ===== PAGINATION ===== */}
+        {list.length > 0 && (
+          <div className="mt-6 flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              Menampilkan {startIndex + 1} - {Math.min(endIndex, list.length)}{" "}
+              dari {list.length} data
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                ← Sebelumnya
+              </button>
+
+              <div className="flex items-center gap-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-2 rounded-lg transition ${
+                        currentPage === page
+                          ? "bg-blue-600 text-white"
+                          : "border border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ),
+                )}
+              </div>
+
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Selanjutnya →
+              </button>
+            </div>
+          </div>
+        )}
 
         {showModal && (
           <>
@@ -380,7 +444,7 @@ export default function PegawaiBarangPage() {
                         <span className="text-xl font-bold text-green-600">
                           {hitungMargin(
                             current.harga || 0,
-                            current.harga_modal || 0
+                            current.harga_modal || 0,
                           )}
                           %
                         </span>
@@ -388,7 +452,7 @@ export default function PegawaiBarangPage() {
                       <p className="text-xs text-green-700 mt-1">
                         Keuntungan per unit:{" "}
                         {formatRupiah(
-                          (current.harga || 0) - (current.harga_modal || 0)
+                          (current.harga || 0) - (current.harga_modal || 0),
                         )}
                       </p>
                     </div>

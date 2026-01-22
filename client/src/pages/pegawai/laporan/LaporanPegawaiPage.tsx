@@ -20,6 +20,7 @@ interface DetailServis {
   id_detail: number
   nama_pelanggan: string
   tipe_hp: string
+  status_servis: string
   biaya_total: number
   laba_servis: number
 }
@@ -31,7 +32,7 @@ interface LaporanDetail extends Laporan {
 export default function LaporanPegawaiPage() {
   const [laporanList, setLaporanList] = useState<Laporan[]>([])
   const [selectedLaporan, setSelectedLaporan] = useState<LaporanDetail | null>(
-    null
+    null,
   )
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
@@ -54,7 +55,7 @@ export default function LaporanPegawaiPage() {
         "http://localhost:8080/api/pegawai/laporan",
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       )
 
       if (!response.ok) throw new Error("Failed to fetch")
@@ -76,7 +77,7 @@ export default function LaporanPegawaiPage() {
         `http://localhost:8080/api/pegawai/laporan/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       )
 
       if (!response.ok) throw new Error("Failed to fetch detail")
@@ -114,7 +115,7 @@ export default function LaporanPegawaiPage() {
             tanggal_akhir: tanggalAkhir,
             keterangan: keterangan,
           }),
-        }
+        },
       )
 
       if (!response.ok) throw new Error("Failed to generate")
@@ -141,7 +142,7 @@ export default function LaporanPegawaiPage() {
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       )
 
       if (!response.ok) throw new Error("Failed to delete")
@@ -176,7 +177,7 @@ export default function LaporanPegawaiPage() {
       const weekAgo = new Date(today)
       weekAgo.setDate(weekAgo.getDate() - 7)
       const weekAgoStr = `${weekAgo.getFullYear()}-${String(
-        weekAgo.getMonth() + 1
+        weekAgo.getMonth() + 1,
       ).padStart(2, "0")}-${String(weekAgo.getDate()).padStart(2, "0")}`
       setTanggalAwal(weekAgoStr)
       setTanggalAkhir(`${year}-${month}-${day}`)
@@ -214,6 +215,29 @@ export default function LaporanPegawaiPage() {
       custom: " Custom",
     }
     return labels[jenis] || jenis
+  }
+
+  // Tambahkan fungsi helper untuk status color
+  const getStatusColor = (status: string) => {
+    const normalizedStatus = status.toLowerCase().replace(/ /g, "_")
+
+    switch (normalizedStatus) {
+      case "pending":
+        return "bg-orange-100 text-orange-700"
+      case "dalam_perbaikan":
+        return "bg-yellow-100 text-yellow-700"
+      case "selesai":
+        return "bg-green-100 text-green-700"
+      case "siap_diambil":
+        return "bg-blue-100 text-blue-700"
+      default:
+        return "bg-gray-100 text-gray-700"
+    }
+  }
+
+  // Format status display
+  const formatStatus = (status: string) => {
+    return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
   }
 
   if (loading) {
@@ -546,7 +570,9 @@ export default function LaporanPegawaiPage() {
                     </p>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg text-center">
-                    <p className="text-sm text-green-600 mb-2">Total Pendapatan</p>
+                    <p className="text-sm text-green-600 mb-2">
+                      Total Pendapatan
+                    </p>
                     <p className="text-xl font-bold text-green-900">
                       {formatCurrency(selectedLaporan.total_pendapatan)}
                     </p>
@@ -581,7 +607,10 @@ export default function LaporanPegawaiPage() {
                                 Pelanggan
                               </th>
                               <th className="text-left p-3 border">Tipe HP</th>
-                              <th className="text-right p-3 border">Pendapatan</th>
+                              <th className="text-center p-3 border">Status</th>
+                              <th className="text-right p-3 border">
+                                Pendapatan
+                              </th>
                               <th className="text-right p-3 border">Laba</th>
                             </tr>
                           </thead>
@@ -599,6 +628,15 @@ export default function LaporanPegawaiPage() {
                                   <td className="p-3 border">
                                     {detail.tipe_hp}
                                   </td>
+                                  <td className="p-3 border text-center">
+                                    <span
+                                      className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
+                                        detail.status_servis,
+                                      )}`}
+                                    >
+                                      {formatStatus(detail.status_servis)}
+                                    </span>
+                                  </td>
                                   <td className="p-3 border text-right font-semibold">
                                     {formatCurrency(detail.biaya_total)}
                                   </td>
@@ -606,17 +644,17 @@ export default function LaporanPegawaiPage() {
                                     {formatCurrency(detail.laba_servis)}
                                   </td>
                                 </tr>
-                              )
+                              ),
                             )}
                           </tbody>
                           <tfoot className="bg-purple-50 font-bold">
                             <tr>
-                              <td colSpan={3} className="text-right p-3 border">
+                              <td colSpan={4} className="text-right p-3 border">
                                 Total:
                               </td>
                               <td className="text-right p-3 border">
                                 {formatCurrency(
-                                  selectedLaporan.total_pendapatan
+                                  selectedLaporan.total_pendapatan,
                                 )}
                               </td>
                               <td className="text-right p-3 border text-green-600">
